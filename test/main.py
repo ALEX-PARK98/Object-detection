@@ -18,7 +18,7 @@ def convert(bgrpic: np.ndarray):
 
 
 def another(bgrpic):
-    graypic = bgrpic[:, :, 0]*0.114 + bgrpic[:, :, 1]*0.547 + bgrpic[:, :, 0.299]
+    graypic = bgrpic[:, :, 0] * 0.114 + bgrpic[:, :, 1] * 0.547 + bgrpic[:, :, 2] * 0.299
     return graypic
 
 
