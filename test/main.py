@@ -2,21 +2,6 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 
-def convert(bgrpic: np.ndarray):
-    w = bgrpic.shape[0]
-    h = bgrpic.shape[1]
-    blue = np.full((w,1), 0.114)
-    green = np.full((w,1), 0.547)
-    red = np.full((w,1), 0.299)
-    gray = np.concatenate((blue, green, red), axis = 1)
-    gray = np.reshape(gray, (w,3,1))
-    graypic = np.matmul(bgrpic, gray)
-    graypic =graypic.flatten()
-    graypic = np.reshape(graypic, (w, h))
-    graypic = graypic/256
-    return graypic
-
-
 def another(bgrpic):
     graypic = bgrpic[:, :, 0] * 0.114 + bgrpic[:, :, 1] * 0.547 + bgrpic[:, :, 2] * 0.299
     return graypic/256
@@ -41,8 +26,13 @@ while True:
         print("Can't receive frame (stream end?). Exiting ...")
         break
 
-    copyframe = another(frame)
-#    res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
+    copyframe1 = another(frame)
+    copyframe2 = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    print(copyframe1.shape)
+    print(copyframe2.shape)
+
+    res = cv.matchTemplate(copyframe2, temp, cv.TM_CCOEFF)
+    res = cv.matchTemplate(copyframe1, temp, cv.TM_CCOEFF)
 #    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
 #    top_left = max_loc
 #    bottom_right = (top_left[0] + w, top_left[1] + h)
