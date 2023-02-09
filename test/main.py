@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 cap = cv.VideoCapture(0)
+print("test")
 if not cap.isOpened():
     print("Cannot open camera")
     exit()
