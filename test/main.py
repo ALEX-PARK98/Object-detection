@@ -42,11 +42,11 @@ while True:
         break
 
     copyframe = another(frame)
-    res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-    top_left = max_loc
-    bottom_right = (top_left[0] + w, top_left[1] + h)
-    cv.rectangle(copyframe, top_left, bottom_right, 255, 2)
+#    res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
+#    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+#    top_left = max_loc
+#    bottom_right = (top_left[0] + w, top_left[1] + h)
+#    cv.rectangle(copyframe, top_left, bottom_right, 255, 2)
     # Our operations on the frame come here
 
     # Display the resulting frame
