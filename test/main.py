@@ -2,20 +2,21 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 cap = cv.VideoCapture(0)
-print("test")
-if not cap.isOpened():
-    print("Cannot open camera")
-    exit()
+#if not cap.isOpened():
+#    print("Cannot open camera")
+#    exit()
 
 temp = cv.imread("template.jpg", 0)
 w, h = temp.shape[::-1]
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
+    #print(frame.shape) ->
     # if frame is read correctly ret is True
     if not ret:
         print("Can't receive frame (stream end?). Exiting ...")
         break
+
     copyframe = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
