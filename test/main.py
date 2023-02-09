@@ -17,6 +17,11 @@ def convert(bgrpic: np.ndarray):
     return graypic
 
 
+def another(bgrpic):
+    graypic = bgrpic[:, :, 0]*0.114 + bgrpic[:, :, 1]*0.547 + bgrpic[:, :, 0.299]
+    return graypic
+
+
 cap = cv.VideoCapture(0)
 #if not cap.isOpened():
 #    print("Cannot open camera")
@@ -36,7 +41,7 @@ while True:
         print("Can't receive frame (stream end?). Exiting ...")
         break
 
-    copyframe = convert(frame)
+    copyframe = another(frame)
     res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
     top_left = max_loc
