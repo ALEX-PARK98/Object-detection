@@ -5,7 +5,24 @@ from matplotlib import pyplot as plt
 def cvtgray(bgrpic):
     graypic = bgrpic[:, :, 0] * 0.114 + bgrpic[:, :, 1] * 0.547 + bgrpic[:, :, 2] * 0.299
     graypic = np.asarray(graypic, dtype=np.uint8)
+
     return graypic
+
+
+def tempmatch(temp, img):
+    w, h = temp.shape[::-1]
+    temp_sum = np.sum(temp)
+    co_ef = 1 / (w * h)
+    co_ef = co_ef * (2 - co_ef)
+    slide = np.lib.stride_tricks.sliding_window_view(img, (h, w))
+    multiple = slide * temp
+    multiple = np.sum(multiple, axis=2)
+    multiple = np.sum(multiple, axis=2)
+    result = np.sum(slide, axis=2)
+    result = np.sum(result, axis=2)
+    result = multiple - temp_sum * co_ef * result
+
+    return result
 
 
 cap = cv.VideoCapture(0)
@@ -28,7 +45,7 @@ while True:
         break
 
     copyframe = cvtgray(frame)
-    res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
+    res = tempmatch(temp, copyframe)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
     top_left = max_loc
     bottom_right = (top_left[0] + w, top_left[1] + h)
