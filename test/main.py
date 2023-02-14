@@ -2,7 +2,7 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 
-def another(bgrpic):
+def cvtgray(bgrpic):
     graypic = bgrpic[:, :, 0] * 0.114 + bgrpic[:, :, 1] * 0.547 + bgrpic[:, :, 2] * 0.299
     graypic = np.asarray(graypic, dtype=np.uint8)
     return graypic
@@ -27,7 +27,7 @@ while True:
         print("Can't receive frame (stream end?). Exiting ...")
         break
 
-    copyframe = another(frame)
+    copyframe = cvtgray(frame)
     res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
     top_left = max_loc
