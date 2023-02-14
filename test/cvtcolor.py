@@ -2,6 +2,12 @@ import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
 
+def another(bgrpic):
+    graypic = bgrpic[:, :, 0] * 0.114 + bgrpic[:, :, 1] * 0.547 + bgrpic[:, :, 2] * 0.299
+    graypic = np.asarray(graypic, dtype=np.uint8)
+    return graypic
+
+
 def convert(bgrpic: np.ndarray):
     w = bgrpic.shape[0]
     h = bgrpic.shape[1]
@@ -13,19 +19,17 @@ def convert(bgrpic: np.ndarray):
     graypic = np.matmul(bgrpic, gray)
     graypic =graypic.flatten()
     graypic = np.reshape(graypic, (w, h))
-    graypic = graypic/256
+    graypic = np.asarray(graypic, dtype=np.uint8)
     return graypic
 
 if __name__ == "__main__":
-    choonsik = cv.imread("template.jpg")
-    gray_choonsik = convert(choonsik)
-    gray_choonsik = gray_choonsik
+    choonsik = cv.imread("choonsik.jpg")
+    convert_choonsik = convert(choonsik)
     cvt_choonsik = cv.cvtColor(choonsik, cv.COLOR_BGR2GRAY)
-    cvt_choonsik = cvt_choonsik
-    cv.imshow("cvt choonsik.jpg", choonsik)
+    another_choonsik = another(choonsik)
+    cv.imshow("choonsik.jpg", choonsik)
     cv.imshow("cvt choonsik.jpg", cvt_choonsik)
-    cv.imshow("gray choonsik.jpg", gray_choonsik)
+    cv.imshow("convert choonsik.jpg", convert_choonsik)
+    cv.imshow("another choonsik.jpg", another_choonsik)
     cv.waitKey(0)
     cv.destroyAllWindows()
-    print(cvt_choonsik)
-    print(gray_choonsik)
