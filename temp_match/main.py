@@ -45,6 +45,7 @@ while True:
         break
 
     copyframe = cvtgray(frame)
+    res = cv.matchTemplate(copyframe, temp, cv.TM_CCOEFF)
     res = tempmatch(temp, copyframe)
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
     top_left = max_loc
