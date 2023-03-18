@@ -1,5 +1,5 @@
+import tensorflow as tf
 import numpy as np
-from IPython.display import Image
 
 NN_ARCHITECTURE = [
     {"input_dim": 2, "output_dim": 25, "activation": "relu"},
@@ -36,6 +36,19 @@ def sigmoid(Z):
 
 def relu(Z):
     return np.maximum(0,Z)
+
+
+def softmax(Z):
+    return np.exp(Z) / sum(np.exp(Z))
+
+
+def one_hot_encod(dataset):
+    size = dataset.shape[-1]
+    one_hot_shape = (size, 10)
+    one_hot_y = np.zeros(one_hot_shape)
+    one_hot_y[np.arange(size), dataset] = 1
+
+    return one_hot_y.T
 
 
 def sigmoid_backward(dA, Z):
@@ -187,3 +200,8 @@ def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False, callback=
                 callback(i, params_values)
 
     return  params_values
+
+if __name__ == "__main__":
+    mnist = tf.keras.datasets.mnist
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x_train, x_test = x_train / 255.0, x_test / 255.0
