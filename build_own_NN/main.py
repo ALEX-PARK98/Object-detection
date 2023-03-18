@@ -221,4 +221,4 @@ if __name__ == "__main__":
     x_test = flatten(x_test)
     y_train = one_hot_encod(y_train)
     y_test = one_hot_encod(y_test)
-    print(y_test[0])
+    print(y_test.shape)
