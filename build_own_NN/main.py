@@ -2,11 +2,11 @@ import tensorflow as tf
 import numpy as np
 
 NN_ARCHITECTURE = [
-    {"input_dim": 2, "output_dim": 25, "activation": "relu"},
-    {"input_dim": 25, "output_dim": 50, "activation": "relu"},
+    {"input_dim": 784, "output_dim": 128, "activation": "relu"},
+    {"input_dim": 128, "output_dim": 50, "activation": "relu"},
     {"input_dim": 50, "output_dim": 50, "activation": "relu"},
     {"input_dim": 50, "output_dim": 25, "activation": "relu"},
-    {"input_dim": 25, "output_dim": 1, "activation": "sigmoid"},
+    {"input_dim": 25, "output_dim": 10, "activation": "sigmoid"},
 ]
 
 
