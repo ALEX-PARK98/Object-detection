@@ -4,9 +4,9 @@ import numpy as np
 NN_ARCHITECTURE = [
     {"input_dim": 2, "output_dim": 25, "activation": "relu"},
     {"input_dim": 25, "output_dim": 50, "activation": "relu"},
-    {"input_dim": 50 "output_dim": 50, "activation": "relu"},
-    {"input_dim": 50 "output_dim": 25, "activation": "relu"},
-    {"input_dim": 25 "output_dim": 1, "activation": "sigmoid"},
+    {"input_dim": 50, "output_dim": 50, "activation": "relu"},
+    {"input_dim": 50, "output_dim": 25, "activation": "relu"},
+    {"input_dim": 25, "output_dim": 1, "activation": "sigmoid"},
 ]
 
 
@@ -42,15 +42,6 @@ def softmax(Z):
     return np.exp(Z) / sum(np.exp(Z))
 
 
-def one_hot_encod(dataset):
-    size = dataset.shape[-1]
-    one_hot_shape = (size, 10)
-    one_hot_y = np.zeros(one_hot_shape)
-    one_hot_y[np.arange(size), dataset] = 1
-
-    return one_hot_y.T
-
-
 def sigmoid_backward(dA, Z):
     sig = sigmoid(Z)
     return dA * sig * (1-sig)
@@ -65,9 +56,9 @@ def relu_backward(dA, Z):
 def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
     Z_curr = np.dot(W_curr, A_prev) + b_curr
 
-    if activation is "relu":
+    if activation == "relu":
         activation_func = relu
-    elif activation is "sigmoid":
+    elif activation == "sigmoid":
         activation_func = sigmoid
     else:
         raise Exception("Non-supported activation function")
@@ -121,12 +112,12 @@ def get_accuracy_value(Y_hat, Y):
 def single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, activation="relu"):
     m = A_prev.shape[1]
 
-    if activation is "relu":
+    if activation == "relu":
         backward_activation_func = relu_backward
-    elif activation is "sigmoid":
+    elif activation == "sigmoid":
         backward_activation_func = sigmoid_backward
     else:
-        rais Exception('Non-supported activation function')
+        raise Exception('Non-supported activation function')
 
     dZ_curr = backward_activation_func(dA_curr, Z_curr)
 
@@ -171,8 +162,8 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
 def update(params_values, grads_values, nn_architecture, learning_rate):
     ## enumerate(list, num) -> start with num
     for layer_idx, layer in enumerate(nn_architecture, 1):
-        params_values.get("W" + str(layer_idx)) -= learning_rate * grads_values.get("dW" + str(layer_idx))
-        params_values.get("b" + str(layer_idx)) -= learning_rate * grads_values.get("db" + str(layer_idx))
+        params_values["W" + str(layer_idx)] -= learning_rate * grads_values.get("dW" + str(layer_idx))
+        params_values["b" + str(layer_idx)] -= learning_rate * grads_values.get("db" + str(layer_idx))
 
     return params_values
 
@@ -201,7 +192,33 @@ def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False, callback=
 
     return  params_values
 
+
+def one_hot_encod(dataset):
+    size = dataset.shape[-1]
+    one_hot_shape = (size, 10)
+    one_hot_y = np.zeros(one_hot_shape)
+    one_hot_y[np.arange(size), dataset] = 1
+
+    return one_hot_y.T
+
+
+def flatten(dataset):
+    size = dataset.shape[0]
+    data_shape = (size, 784)
+    dataset = dataset.reshape(data_shape)
+
+    return dataset
+
+
 if __name__ == "__main__":
+    ## load dataset
     mnist = tf.keras.datasets.mnist
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
+
+    ## process data
+    x_train = flatten(x_train)
+    x_test = flatten(x_test)
+    y_train = one_hot_encod(y_train)
+    y_test = one_hot_encod(y_test)
+    print(y_test[0])
