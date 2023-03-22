@@ -1,16 +1,28 @@
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-NN_ARCHITECTURE = [
-    {"input_dim": 784, "output_dim": 128, "activation": "relu"},
-    {"input_dim": 128, "output_dim": 50, "activation": "relu"},
-    {"input_dim": 50, "output_dim": 50, "activation": "relu"},
-    {"input_dim": 50, "output_dim": 25, "activation": "relu"},
-    {"input_dim": 25, "output_dim": 10, "activation": "sigmoid"},
-]
+def one_hot_encod(dataset):
+    size = dataset.shape[-1]
+    one_hot_shape = (size, 10)
+    one_hot_y = np.zeros(one_hot_shape)
+    one_hot_y[np.arange(size), dataset] = 1
+
+    return one_hot_y.T
 
 
-## return W and b according to nn_architecture
+def flatten(dataset):
+    size = dataset.shape[0]
+    data_shape = (size, 784)
+
+    return dataset.reshape(data_shape)
+
+
+def compute_loss(y,y_hat):
+    m = y.shape[-1]
+
+    return -(1 / m) * np.sum(y * np.log(y_hat))
+
+
 def init_layers(nn_architecture, seed = 99):
     np.random.seed(seed)
     params_values = {}
@@ -39,12 +51,12 @@ def relu(Z):
 
 
 def softmax(Z):
-    return np.exp(Z) / sum(np.exp(Z))
+    return np.exp(Z) / np.sum(np.exp(Z), axis = 0)
 
 
 def sigmoid_backward(dA, Z):
     sig = sigmoid(Z)
-    return dA * sig * (1-sig)
+    return dA * sig * (1 - sig)
 
 
 def relu_backward(dA, Z):
@@ -79,34 +91,10 @@ def full_forward_propagation(X, params_values, nn_architecture):
         b_curr = params_values.get("b" + str(layer_idx))
         A_curr, Z_curr = single_layer_forward_propagation(A_prev, W_curr, b_curr, active_function_curr)
 
-        memory["A" + str(idx)] = A_prev
-        memory["Z" + str(idx)] = Z_prev
+        memory["A" + str(idx+1)] = A_prev
+        memory["Z" + str(idx+1)] = Z_curr
 
     return A_curr, memory
-
-
-def get_cost_value(Y_hat, Y):
-    ## number of examples
-    m = Y_hat.shape[1]
-
-    cost = -1 / m * (np.dot(Y, np.log(Y_hat).T) + np.dot(1 - Y, np.log(1 - Y_hat).T))
-
-    ## numpy.squeeze() function is used when we want to remove single-dimensional entries from the shape of an array.
-    return np.squeeze(cost)
-
-
-def convert_prob_into_class(probs):
-    probs_ = np.copy(probs)
-    probs_[probs_ > 0.5] = 1
-    probs_[probs_ <= 0.5] = 0
-
-    return probs_
-
-
-def get_accuracy_value(Y_hat, Y):
-    Y_hat_ = convert_prob_into_class(Y_hat)
-
-    return (Y_hat_ == Y).all(axis=0).mean()
 
 
 def single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, activation="relu"):
@@ -143,10 +131,9 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
 
         dA_curr = dA_prev
 
-        A_prev = memory.get("A" + str(layer_idx_prev))
-        Z_prev = memory.get("Z" + str(layer_idx_curr))
-
-        W_curr = params_values.get("w" + str(layer_idx_curr))
+        A_prev = memory.get("A" + str(layer_idx_prev+1))
+        Z_curr = memory.get("Z" + str(layer_idx_curr+1))
+        W_curr = params_values.get("W" + str(layer_idx_curr))
         b_curr = params_values.get("b" + str(layer_idx_curr))
 
         dA_prev, dW_curr, db_curr = single_layer_backward_propagation(
@@ -162,56 +149,16 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
 def update(params_values, grads_values, nn_architecture, learning_rate):
     ## enumerate(list, num) -> start with num
     for layer_idx, layer in enumerate(nn_architecture, 1):
+        print(f"params_values[W{layer_idx}]: {params_values['W' + str(layer_idx)].shape}")
+        print(f"grads_values.get(dW{layer_idx}): {grads_values['dW'+str(layer_idx)].shape}")
         params_values["W" + str(layer_idx)] -= learning_rate * grads_values.get("dW" + str(layer_idx))
         params_values["b" + str(layer_idx)] -= learning_rate * grads_values.get("db" + str(layer_idx))
 
     return params_values
 
 
-def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False, callback=None):
-    params_values = init_layers(nn_architecture, 2)
-    cost_history = []
-    accuracy_history = []
-
-    for i in range(epochs):
-        Y_hat, cashe = full_forward_propagation(X, params_values, nn_architecture)
-
-        cost = get_cost_value(Y_hat, Y)
-        cost_history.append(cost)
-        accuracy = get_accuracy_value(Y_hat, Y)
-        accuracy_history.append(accuracy)
-
-        grads_values = full_backward_propagation(Y_hat, Y, cashe, params_values, nn_architecture)
-        params_values = update(params_values, grads_values, nn_architecture, learning_rate)
-
-        if(i % 50 == 0):
-            if(verbose):
-                print("Iteration: {:05} - cost: {:.5f} - accuracy: {:.5f}".format(i, cost, accuracy))
-            if(callback is not None):
-                callback(i, params_values)
-
-    return  params_values
-
-
-def one_hot_encod(dataset):
-    size = dataset.shape[-1]
-    one_hot_shape = (size, 10)
-    one_hot_y = np.zeros(one_hot_shape)
-    one_hot_y[np.arange(size), dataset] = 1
-
-    return one_hot_y.T
-
-
-def flatten(dataset):
-    size = dataset.shape[0]
-    data_shape = (size, 784)
-    dataset = dataset.reshape(data_shape)
-
-    return dataset
-
-
 if __name__ == "__main__":
-    ## load dataset
+    ## mnist data
     mnist = tf.keras.datasets.mnist
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
@@ -219,6 +166,40 @@ if __name__ == "__main__":
     ## process data
     x_train = flatten(x_train)
     x_test = flatten(x_test)
-    y_train = one_hot_encod(y_train)
     y_test = one_hot_encod(y_test)
-    print(y_test.shape)
+    y_train = one_hot_encod(y_train)
+
+    ## prepare layers
+    nn_architecture = [
+        {"input_dim": 784, "output_dim": 128, "activation": "relu"},
+        {"input_dim": 128, "output_dim": 50, "activation": "relu"},
+        {"input_dim": 50, "output_dim": 50, "activation": "relu"},
+        {"input_dim": 50, "output_dim": 25, "activation": "relu"},
+        {"input_dim": 25, "output_dim": 10, "activation": "sigmoid"},
+    ]
+
+    params_values = init_layers(nn_architecture=nn_architecture)
+    print(f"params_values: {params_values.keys()}")
+
+    ## forward propagation
+    A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
+    print(f"A_curr shape: {A_curr.shape}")
+    print(f"memory: {memory.keys()}")
+    y_hat = softmax(A_curr)
+
+    loss = compute_loss(y_train, y_hat)
+    print(f"loss: {loss}")
+
+    grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
+    print(f"grads_values: {grads_values.keys()}")
+
+    params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
+
+    ## forward propagation
+    A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
+    print(f"A_curr shape: {A_curr.shape}")
+    print(f"memory: {memory.keys()}")
+    y_hat = softmax(A_curr)
+
+    loss = compute_loss(y_train, y_hat)
+    print(f"loss: {loss}")
