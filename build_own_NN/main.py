@@ -42,21 +42,12 @@ def init_layers(nn_architecture, seed = 99):
     return params_values
 
 
-def sigmoid(Z):
-    return 1/(1+np.exp(-Z))
-
-
 def relu(Z):
     return np.maximum(0,Z)
 
 
 def softmax(Z):
     return np.exp(Z) / np.sum(np.exp(Z), axis = 0)
-
-
-def sigmoid_backward(dA, Z):
-    sig = sigmoid(Z)
-    return dA * sig * (1 - sig)
 
 
 def relu_backward(dA, Z):
@@ -70,8 +61,8 @@ def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
 
     if activation == "relu":
         activation_func = relu
-    elif activation == "sigmoid":
-        activation_func = sigmoid
+    elif activation == "softmax":
+        activation_func = softmax
     else:
         raise Exception("Non-supported activation function")
 
@@ -91,54 +82,72 @@ def full_forward_propagation(X, params_values, nn_architecture):
         b_curr = params_values.get("b" + str(layer_idx))
         A_curr, Z_curr = single_layer_forward_propagation(A_prev, W_curr, b_curr, active_function_curr)
 
-        memory["A" + str(idx+1)] = A_prev
-        memory["Z" + str(idx+1)] = Z_curr
+        memory["A" + str(layer_idx)] = A_curr
+        memory["Z" + str(layer_idx)] = Z_curr
 
     return A_curr, memory
 
 
-def single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, activation="relu"):
+def single_layer_backward_propagation(dZ_prev, W_curr, Z_curr, A_prev, activation="relu"):
     m = A_prev.shape[1]
 
     if activation == "relu":
         backward_activation_func = relu_backward
-    elif activation == "sigmoid":
-        backward_activation_func = sigmoid_backward
+        dA_curr = np.dot(W_curr.T, dZ_prev)
+        dZ_curr = backward_activation_func(dA_curr, Z_curr)
+        dW_curr = np.dot(dZ_curr, A_prev.T) / m
+        db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
+        dZ_prev = np.dot(W_curr.T, dZ_curr)
+
+    elif activation == "softmax":
+        dW_curr = np.dot(dZ_prev, A_prev.T) / m
+        db_curr = np.sum(dZ_prev, axis=1, keepdims=True) / m
+
     else:
         raise Exception('Non-supported activation function')
 
-    dZ_curr = backward_activation_func(dA_curr, Z_curr)
+    return dZ_prev, dW_curr, db_curr
 
-    dW_curr = np.dot(dZ_curr, A_prev.T) / m
+def softmax_backward_propagation(dZ_prev, A_prev):
+    m = A_prev.shape[1]
+    dW_curr = np.dot(dZ_prev, A_prev.T) / m
+    db_curr = np.sum(dZ_prev, axis=1, keepdims=True) / m
 
-    db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
-    dA_prev = np.dot(W_curr.T, dZ_curr)
+    return dZ_prev, dW_curr, db_curr
 
-    return dA_prev, dW_curr, db_curr
 
+def relu_backward_propagation(dZ_prev, A_prev, W_prev, Z_curr):
+    m = A_prev.shape[1]
+
+    dA_curr = np.dot(W_prev.T, dZ_prev)
+    dZ_prev = relu_backward(dA_curr, Z_curr)
+    dW_curr = np.dot(dZ_prev, A_prev.T) / m
+    db_curr = np.sum(dZ_prev, axis=1, keepdims=True) / m
+
+    return dZ_prev, dW_curr, db_curr
 
 def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
     grads_values = {}
 
-    m = Y.shape
-    Y = Y.reshape(Y_hat.shape)
-
-    dA_prev = - (np.divide(Y, Y_hat) - np.divide(1 - Y, 1 - Y_hat))
+    dZ_prev = Y_hat - Y
 
     for layer_idx_prev, layer in reversed(list(enumerate(nn_architecture))):
         layer_idx_curr = layer_idx_prev + 1
         activ_function_curr = layer.get("activation")
 
-        dA_curr = dA_prev
+        A_prev = memory.get("A" + str(layer_idx_prev))
+        Z_curr = memory.get("Z" + str(layer_idx_curr))
 
-        A_prev = memory.get("A" + str(layer_idx_prev+1))
-        Z_curr = memory.get("Z" + str(layer_idx_curr+1))
-        W_curr = params_values.get("W" + str(layer_idx_curr))
-        b_curr = params_values.get("b" + str(layer_idx_curr))
+        if activ_function_curr == "softmax":
+            dZ_prev, dW_curr, db_curr = softmax_backward_propagation(
+                dZ_prev, A_prev
+            )
 
-        dA_prev, dW_curr, db_curr = single_layer_backward_propagation(
-            dA_curr, W_curr, b_curr, Z_curr, A_prev, activ_function_curr
-        )
+        elif activ_function_curr == "relu":
+            W_prev = params_values.get("W" + str(layer_idx_curr + 1))
+            dZ_prev, dW_curr, db_curr = relu_backward_propagation(
+                dZ_prev, A_prev, W_prev, Z_curr
+            )
 
         grads_values["dW" + str(layer_idx_curr)] = dW_curr
         grads_values["db" + str(layer_idx_curr)] = db_curr
@@ -146,11 +155,9 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
     return grads_values
 
 
-def update(params_values, grads_values, nn_architecture, learning_rate):
+def update(params_values, grads_values, nn_architecture, learning_rate=0.2):
     ## enumerate(list, num) -> start with num
     for layer_idx, layer in enumerate(nn_architecture, 1):
-        print(f"params_values[W{layer_idx}]: {params_values['W' + str(layer_idx)].shape}")
-        print(f"grads_values.get(dW{layer_idx}): {grads_values['dW'+str(layer_idx)].shape}")
         params_values["W" + str(layer_idx)] -= learning_rate * grads_values.get("dW" + str(layer_idx))
         params_values["b" + str(layer_idx)] -= learning_rate * grads_values.get("db" + str(layer_idx))
 
@@ -175,31 +182,22 @@ if __name__ == "__main__":
         {"input_dim": 128, "output_dim": 50, "activation": "relu"},
         {"input_dim": 50, "output_dim": 50, "activation": "relu"},
         {"input_dim": 50, "output_dim": 25, "activation": "relu"},
-        {"input_dim": 25, "output_dim": 10, "activation": "sigmoid"},
+        {"input_dim": 25, "output_dim": 10, "activation": "softmax"},
     ]
 
     params_values = init_layers(nn_architecture=nn_architecture)
-    print(f"params_values: {params_values.keys()}")
 
-    ## forward propagation
-    A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
-    print(f"A_curr shape: {A_curr.shape}")
-    print(f"memory: {memory.keys()}")
-    y_hat = softmax(A_curr)
+    for i in range (200):
+        A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
+        memory["A0"] = x_train.T
+        loss = compute_loss(y_train, memory.get("A5"))
+        print(f"loss: {loss}")
+        grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
+        params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.1)
 
-    loss = compute_loss(y_train, y_hat)
-    print(f"loss: {loss}")
-
-    grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
-    print(f"grads_values: {grads_values.keys()}")
-
-    params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
-
-    ## forward propagation
-    A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
-    print(f"A_curr shape: {A_curr.shape}")
-    print(f"memory: {memory.keys()}")
-    y_hat = softmax(A_curr)
-
-    loss = compute_loss(y_train, y_hat)
-    print(f"loss: {loss}")
+        A_curr, memory = full_forward_propagation(x_test.T, params_values, nn_architecture)
+        accuracy = 0
+        for i, j in zip(A_curr.T, y_test.T):
+            if np.argmax(i) == np.argmax(j):
+                accuracy +=1
+        print(accuracy/10000)
