@@ -90,6 +90,7 @@ def full_forward_propagation(X, params_values, nn_architecture):
 
 def single_layer_backward_propagation(dZ_prev, W_curr, Z_curr, A_prev, activation="relu"):
     m = A_prev.shape[1]
+    print(m)
 
     if activation == "relu":
         backward_activation_func = relu_backward
