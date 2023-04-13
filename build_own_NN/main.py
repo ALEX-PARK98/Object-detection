@@ -43,20 +43,17 @@ def init_layers(nn_architecture, seed = 99):
 
 
 def relu(Z):
-    A = np.array(Z, copy=True)
-    return np.maximum(0,A)
+    return np.maximum(0,Z)
 
 
 def softmax(Z):
-    A = np.array(Z, copy=True)
-    return np.exp(A) / np.sum(np.exp(Z), axis = 0)
+    return np.exp(Z) / np.sum(np.exp(Z), axis = 0)
 
 
 def relu_backward(dA, Z):
     ## make copy of dA dZ = np.array(dA, copy = True)
     dZ = np.array(dA, copy = True)
     dZ[Z <= 0] = 0
-    dZ[Z > 0] = 1
     return dZ
 
 def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
@@ -169,7 +166,7 @@ if __name__ == "__main__":
 
     params_values = init_layers(nn_architecture=nn_architecture)
 
-    for i in range (200):
+    for i in range (1200):
         A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
         memory["A0"] = x_train.T
         loss = compute_loss(y_train, memory.get("A5"))
