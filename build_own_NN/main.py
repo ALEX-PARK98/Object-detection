@@ -43,17 +43,20 @@ def init_layers(nn_architecture, seed = 99):
 
 
 def relu(Z):
-    return np.maximum(0,Z)
+    A = np.array(Z, copy=True)
+    return np.maximum(0,A)
 
 
 def softmax(Z):
-    return np.exp(Z) / np.sum(np.exp(Z), axis = 0)
+    A = np.array(Z, copy=True)
+    return np.exp(A) / np.sum(np.exp(Z), axis = 0)
 
 
 def relu_backward(dA, Z):
     ## make copy of dA dZ = np.array(dA, copy = True)
     dZ = np.array(dA, copy = True)
     dZ[Z <= 0] = 0
+    dZ[Z > 0] = 1
     return dZ
 
 def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
@@ -88,27 +91,6 @@ def full_forward_propagation(X, params_values, nn_architecture):
     return A_curr, memory
 
 
-def single_layer_backward_propagation(dZ_prev, W_curr, Z_curr, A_prev, activation="relu"):
-    m = A_prev.shape[1]
-    print(m)
-
-    if activation == "relu":
-        backward_activation_func = relu_backward
-        dA_curr = np.dot(W_curr.T, dZ_prev)
-        dZ_curr = backward_activation_func(dA_curr, Z_curr)
-        dW_curr = np.dot(dZ_curr, A_prev.T) / m
-        db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
-        dZ_prev = np.dot(W_curr.T, dZ_curr)
-
-    elif activation == "softmax":
-        dW_curr = np.dot(dZ_prev, A_prev.T) / m
-        db_curr = np.sum(dZ_prev, axis=1, keepdims=True) / m
-
-    else:
-        raise Exception('Non-supported activation function')
-
-    return dZ_prev, dW_curr, db_curr
-
 def softmax_backward_propagation(dZ_prev, A_prev):
     m = A_prev.shape[1]
     dW_curr = np.dot(dZ_prev, A_prev.T) / m
@@ -119,7 +101,6 @@ def softmax_backward_propagation(dZ_prev, A_prev):
 
 def relu_backward_propagation(dZ_prev, A_prev, W_prev, Z_curr):
     m = A_prev.shape[1]
-
     dA_curr = np.dot(W_prev.T, dZ_prev)
     dZ_prev = relu_backward(dA_curr, Z_curr)
     dW_curr = np.dot(dZ_prev, A_prev.T) / m
@@ -156,7 +137,7 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
     return grads_values
 
 
-def update(params_values, grads_values, nn_architecture, learning_rate=0.2):
+def update(params_values, grads_values, nn_architecture, learning_rate=0.1):
     ## enumerate(list, num) -> start with num
     for layer_idx, layer in enumerate(nn_architecture, 1):
         params_values["W" + str(layer_idx)] -= learning_rate * grads_values.get("dW" + str(layer_idx))
@@ -194,11 +175,11 @@ if __name__ == "__main__":
         loss = compute_loss(y_train, memory.get("A5"))
         print(f"loss: {loss}")
         grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
-        params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.1)
+        params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
 
         A_curr, memory = full_forward_propagation(x_test.T, params_values, nn_architecture)
         accuracy = 0
         for i, j in zip(A_curr.T, y_test.T):
             if np.argmax(i) == np.argmax(j):
-                accuracy +=1
+                accuracy += 1
         print(accuracy/10000)
