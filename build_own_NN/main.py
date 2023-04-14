@@ -165,18 +165,44 @@ if __name__ == "__main__":
     ]
 
     params_values = init_layers(nn_architecture=nn_architecture)
+    print(x_train.shape)
+    print(y_train.shape)
+    batch_X = list(
+        np.reshape(
+            x_train, (60, 1000, 784)
+        )
+    )
+    batch_Y = np.split(y_train, 60, axis=1)
 
-    for i in range (1200):
-        A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
-        memory["A0"] = x_train.T
-        loss = compute_loss(y_train, memory.get("A5"))
-        print(f"loss: {loss}")
-        grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
-        params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
+    print(batch_X[0].shape)
+    print(batch_Y[0].shape)
+#    for epoch in range(100):
+#        A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
+#        memory["A0"] = x_train.T
+#        loss = compute_loss(y_train, memory.get("A5"))
+#        print(f"loss: {loss}")
+#        grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
+#        params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
+#
+#        A_curr, memory = full_forward_propagation(x_test.T, params_values, nn_architecture)
+#        accuracy = 0
+#        for i, j in zip(A_curr.T, y_test.T):
+#            if np.argmax(i) == np.argmax(j):
+#                accuracy += 1
+#        print(f"accuracy: {accuracy/10000}%")
 
-        A_curr, memory = full_forward_propagation(x_test.T, params_values, nn_architecture)
-        accuracy = 0
-        for i, j in zip(A_curr.T, y_test.T):
-            if np.argmax(i) == np.argmax(j):
-                accuracy += 1
-        print(accuracy/10000)
+    for epoch in range(100):
+        for x_train, y_train in zip(batch_X, batch_Y):
+            A_curr, memory = full_forward_propagation(x_train.T, params_values, nn_architecture)
+            memory["A0"] = x_train.T
+            loss = compute_loss(y_train, memory.get("A5"))
+            print(f"loss: {loss}")
+            grads_values = full_backward_propagation(A_curr, y_train, memory, params_values, nn_architecture)
+            params_values = update(params_values, grads_values, nn_architecture, learning_rate=0.2)
+
+            A_curr, memory = full_forward_propagation(x_test.T, params_values, nn_architecture)
+            accuracy = 0
+            for i, j in zip(A_curr.T, y_test.T):
+                if np.argmax(i) == np.argmax(j):
+                    accuracy += 1
+            print(f"accuracy: {accuracy/10000}%")
